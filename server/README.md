@@ -1,6 +1,8 @@
 # SkillForge Server
 
-The SkillForge server is an asynchronous REST API built with FastAPI.
+The SkillForge server is an asynchronous REST API built with FastAPI. It powers the backend of the SkillForge platform by providing secure, scalable, and versioned REST APIs.
+
+---
 
 ## Current Features
 
@@ -18,10 +20,20 @@ The SkillForge server is an asynchronous REST API built with FastAPI.
 - Standardized API error responses
 - Request ID middleware
 - Request execution-time tracking
+- Structured JSON logging
+- Request and response tracing
+- Configurable CORS policy
+- Environment-based allowed frontend origins
+
+---
 
 ## Requirements
 
 - Python 3.11 or newer
+- pip
+- Git
+
+---
 
 ## Local Setup
 
@@ -31,13 +43,13 @@ Create a virtual environment:
 python -m venv .venv
 ```
 
-Activate the virtual environment (Git Bash):
+Activate it (Git Bash):
 
 ```bash
 source .venv/Scripts/activate
 ```
 
-Activate the virtual environment (Windows PowerShell):
+Activate it (PowerShell):
 
 ```powershell
 .venv\Scripts\Activate.ps1
@@ -73,6 +85,8 @@ ReDoc:
 http://127.0.0.1:8000/redoc
 ```
 
+---
+
 ## Testing
 
 Run the automated test suite:
@@ -86,6 +100,8 @@ Run tests with verbose output:
 ```bash
 pytest -v
 ```
+
+---
 
 ## Code Quality
 
@@ -113,20 +129,24 @@ Run static type checking:
 mypy app
 ```
 
+---
+
 ## Response Headers
 
-Every API response includes tracing and performance headers:
+Every API response includes tracing and performance headers.
 
 | Header | Description |
-|---|---|
-| `X-Request-ID` | Unique identifier used to trace a request |
-| `X-Process-Time` | Server-side request processing duration in seconds |
+|---------|-------------|
+| `X-Request-ID` | Unique identifier used to trace each request |
+| `X-Process-Time` | Total server-side processing time |
 
-Clients may send their own `X-Request-ID`. Otherwise, the server generates one.
+Clients may send their own `X-Request-ID`. If omitted, the server automatically generates one.
+
+---
 
 ## Error Response Format
 
-Expected API errors use a consistent structure:
+Expected API errors follow a standardized format.
 
 ```json
 {
@@ -137,6 +157,43 @@ Expected API errors use a consistent structure:
   },
   "request_id": "73d77803-0306-456d-87b5-40c863de64ce"
 }
+```
+
+---
+
+## Logging
+
+Application logs use a structured JSON format.
+
+Each request log may include:
+
+- Request ID
+- HTTP method
+- Request path
+- Response status
+- Processing duration
+
+The logging level is configured through:
+
+```env
+LOG_LEVEL=INFO
+```
+
+---
+
+## CORS
+
+Allowed frontend origins are configured through:
+
+```env
+CORS_ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+```
+
+The default development configuration supports common React and Vite development servers.
+
+Production frontend origins must be explicitly configured before deployment.
+
+---
 
 ## Current Structure
 
@@ -163,8 +220,8 @@ server/
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── config.py
-│   │   ├── security.py          # Future
-│   │   ├── logging.py           # Future
+│   │   ├── security.py
+│   │   ├── logging.py
 │   │   └── exceptions.py
 │   │
 │   ├── database/
@@ -211,28 +268,47 @@ server/
 │   └── services/
 │       └── __init__.py
 │
-├── alembic/                     # Will be added later
-│
+├── alembic/
 ├── .env
 ├── .env.example
 ├── .gitignore
 ├── pyproject.toml
 ├── requirements.txt
 ├── README.md
-└── Dockerfile                   # Will be added later
+└── Dockerfile
 ```
+
+---
 
 ## Project Status
 
-The FastAPI backend has been initialized with versioned routing, environment-based settings, health-check endpoints, automated testing, and a modular project architecture.
+The backend foundation has been completed.
+
+Current progress includes:
+
+- FastAPI application setup
+- Modular project architecture
+- Versioned API routing
+- Environment-based configuration
+- Health-check endpoint
+- Standardized exception handling
+- Request tracing middleware
+- Structured JSON logging
+- Configurable CORS policy
+- Automated testing infrastructure
+- Code quality tooling
+
+---
 
 ## Future Development
 
-The backend will continue to evolve with support for:
+The project will continue with the implementation of:
 
 - JWT authentication
+- User management
 - Role-based authorization
-- PostgreSQL with SQLAlchemy
+- PostgreSQL integration
+- SQLAlchemy ORM
 - Alembic database migrations
 - Redis caching
 - Celery background workers
@@ -240,3 +316,4 @@ The backend will continue to evolve with support for:
 - Notifications
 - Docker deployment
 - GitHub Actions CI/CD
+- Monitoring and observability

@@ -1,19 +1,41 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
+from app.core.logging import configure_logging
+from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.request_context import RequestContextMiddleware
+
+configure_logging()
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    print(f"Starting {settings.app_name}")
+    logger.info(
+        "Application started",
+        extra={
+            "application": settings.app_name,
+            "version": settings.app_version,
+            "environment": settings.app_environment,
+        },
+    )
+
     yield
-    print(f"Stopping {settings.app_name}")
+
+    logger.info(
+        "Application stopped",
+        extra={
+            "application": settings.app_name,
+        },
+    )
 
 
 def create_application() -> FastAPI:
@@ -25,6 +47,30 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
 
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allowed_origins,
+        allow_credentials=True,
+        allow_methods=[
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS",
+        ],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "X-Request-ID",
+        ],
+        expose_headers=[
+            "X-Request-ID",
+            "X-Process-Time",
+        ],
+    )
+
+    application.add_middleware(RequestLoggingMiddleware)
     application.add_middleware(RequestContextMiddleware)
 
     register_exception_handlers(application)
