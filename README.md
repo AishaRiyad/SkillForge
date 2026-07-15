@@ -63,14 +63,15 @@ SkillForge/
 
 ## Project Status
 
-The project is currently in the initial setup and development phase.
+The FastAPI backend has been initialized with versioned routing,
+environment-based settings, and a health-check endpoint.
 
 ## Development Roadmap
 
 * [x] Select the project idea
 * [x] Create the initial repository structure
-* [ ] Initialize the FastAPI backend
-* [ ] Configure application settings
+* [x] Initialize the FastAPI backend
+* [x] Configure application settings
 * [ ] Configure Supabase PostgreSQL
 * [ ] Add database migrations
 * [ ] Implement authentication
