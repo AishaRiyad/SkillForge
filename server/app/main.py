@@ -5,10 +5,12 @@ from fastapi import FastAPI
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.core.error_handlers import register_exception_handlers
+from app.middleware.request_context import RequestContextMiddleware
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     print(f"Starting {settings.app_name}")
     yield
     print(f"Stopping {settings.app_name}")
@@ -22,6 +24,10 @@ def create_application() -> FastAPI:
         debug=settings.app_debug,
         lifespan=lifespan,
     )
+
+    application.add_middleware(RequestContextMiddleware)
+
+    register_exception_handlers(application)
 
     application.include_router(api_router)
 

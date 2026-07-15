@@ -14,6 +14,10 @@ The SkillForge server is an asynchronous REST API built with FastAPI.
 - Asynchronous test client
 - Ruff linting and formatting
 - Mypy static type checking
+- Global exception handling
+- Standardized API error responses
+- Request ID middleware
+- Request execution-time tracking
 
 ## Requirements
 
@@ -108,6 +112,31 @@ Run static type checking:
 ```bash
 mypy app
 ```
+
+## Response Headers
+
+Every API response includes tracing and performance headers:
+
+| Header | Description |
+|---|---|
+| `X-Request-ID` | Unique identifier used to trace a request |
+| `X-Process-Time` | Server-side request processing duration in seconds |
+
+Clients may send their own `X-Request-ID`. Otherwise, the server generates one.
+
+## Error Response Format
+
+Expected API errors use a consistent structure:
+
+```json
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "The requested resource was not found.",
+    "details": null
+  },
+  "request_id": "73d77803-0306-456d-87b5-40c863de64ce"
+}
 
 ## Current Structure
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 
 from app.core.config import settings
+from app.core.exceptions import ResourceNotFoundError
 
 router = APIRouter(
     prefix="/health",
@@ -20,3 +21,14 @@ async def health_check() -> dict[str, str]:
         "version": settings.app_version,
         "environment": settings.app_environment,
     }
+
+
+@router.get(
+    "/error-example",
+    include_in_schema=False,
+)
+async def error_example() -> None:
+    raise ResourceNotFoundError(
+        resource="Example resource",
+        resource_id="example-id",
+    )
