@@ -49,6 +49,8 @@ The repository is organized as a monorepo containing a FastAPI backend and a fut
 * Docker Compose
 * Pytest
 * GitHub Actions
+* Ruff
+* Mypy
 
 ## Repository Structure
 
@@ -72,6 +74,8 @@ environment-based settings, and a health-check endpoint.
 * [x] Create the initial repository structure
 * [x] Initialize the FastAPI backend
 * [x] Configure application settings
+* [x] Configure initial testing tools
+* [x] Configure linting and type checking
 * [ ] Configure Supabase PostgreSQL
 * [ ] Add database migrations
 * [ ] Implement authentication
