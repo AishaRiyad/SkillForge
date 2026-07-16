@@ -9,6 +9,7 @@ from app.api.router import api_router
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.core.logging import configure_logging
+from app.database.session import close_database_connection
 from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.request_context import RequestContextMiddleware
 
@@ -29,6 +30,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     )
 
     yield
+
+    await close_database_connection()
 
     logger.info(
         "Application stopped",

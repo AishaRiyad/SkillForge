@@ -24,6 +24,12 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Request and response tracing
 - Configurable CORS policy
 - Environment-based allowed frontend origins
+- Asynchronous SQLAlchemy database engine
+- Async PostgreSQL sessions
+- Supabase PostgreSQL connection
+- Database dependency injection
+- Database health-check endpoint
+- Alembic migration environment
 
 ---
 
@@ -195,6 +201,56 @@ Production frontend origins must be explicitly configured before deployment.
 
 ---
 
+## Database Setup
+
+SkillForge uses Supabase PostgreSQL together with SQLAlchemy's asynchronous engine.
+
+Copy the database connection string from the Supabase dashboard and change its scheme to use SQLAlchemy's async driver.
+
+Connection string format:
+
+```text
+postgresql+asyncpg://USERNAME:PASSWORD@HOST:PORT/DATABASE
+```
+
+Add the connection string only to your local `.env` file:
+
+```env
+DATABASE_URL=postgresql+asyncpg://...
+```
+
+Never commit the real database URL to GitHub or to `.env.example`.
+
+To verify the database connection:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/api/v1/health/database
+```
+
+---
+
+## Database Migrations
+
+Show the current migration:
+
+```bash
+alembic current
+```
+
+Show available migration heads:
+
+```bash
+alembic heads
+```
+
+---
+
 ## Current Structure
 
 ```text
@@ -290,11 +346,14 @@ Current progress includes:
 - Modular project architecture
 - Versioned API routing
 - Environment-based configuration
-- Health-check endpoint
+- Health-check endpoints
 - Standardized exception handling
 - Request tracing middleware
 - Structured JSON logging
 - Configurable CORS policy
+- Supabase PostgreSQL integration
+- Asynchronous SQLAlchemy database engine
+- Alembic migration environment
 - Automated testing infrastructure
 - Code quality tooling
 
@@ -307,8 +366,9 @@ The project will continue with the implementation of:
 - JWT authentication
 - User management
 - Role-based authorization
-- PostgreSQL integration
-- SQLAlchemy ORM
+- SQLAlchemy models
+- Repository layer
+- Service layer
 - Alembic database migrations
 - Redis caching
 - Celery background workers
