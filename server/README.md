@@ -35,6 +35,12 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - One-to-one user profile relationship
 - Database constraints and indexes
 - Initial users and profiles migration
+- User registration request validation
+- Secure Argon2 password hashing
+- Password verification
+- User repository abstraction
+- Case-insensitive email and username lookup
+- Repository, schema, and security unit tests
 
 ---
 
@@ -299,7 +305,48 @@ Review the generated file, then apply it:
 alembic upgrade head
 ```
 
+---
 
+## User Registration Validation
+
+Registration data is validated before reaching the service layer.
+
+Current validation rules include:
+
+- A valid email address
+- Username length between 3 and 30 characters
+- Only lowercase letters, numbers, and underscores in usernames
+- Password length between 8 and 128 characters
+- At least one uppercase letter in the password
+- At least one lowercase letter in the password
+- At least one number in the password
+
+Email addresses and usernames are normalized before processing to support
+consistent, case-insensitive lookups.
+
+Passwords are hashed using Argon2 before database storage. Plain-text passwords
+are never stored in the database.
+
+---
+
+## Repository Layer
+
+The repository layer is responsible only for direct database operations and
+does not contain business logic.
+
+The user repository currently supports:
+
+- Finding users by ID
+- Finding users by email
+- Finding users by username
+- Case-insensitive email lookup
+- Case-insensitive username lookup
+- Creating a user and associated profile
+- Flushing newly created records within the active database transaction
+
+Business rules and transaction coordination will be handled by the service layer.
+
+---
 
 ## Current Structure
 
@@ -388,7 +435,7 @@ server/
 
 ## Project Status
 
-The backend foundation has been completed.
+The backend foundation and initial user data layer have been completed.
 
 Current progress includes:
 
@@ -404,6 +451,11 @@ Current progress includes:
 - Supabase PostgreSQL integration
 - Asynchronous SQLAlchemy database engine
 - Alembic migration environment
+- User and profile ORM models
+- Initial users and profiles migration
+- User registration schema validation
+- Secure Argon2 password hashing
+- User repository implementation
 - Automated testing infrastructure
 - Code quality tooling
 
@@ -416,7 +468,6 @@ The project will continue with the implementation of:
 - JWT authentication
 - User management APIs
 - Role-based authorization
-- Repository layer
 - Service layer
 - Skill assessment engine
 - Personalized learning recommendations
