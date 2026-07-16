@@ -30,6 +30,11 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Database dependency injection
 - Database health-check endpoint
 - Alembic migration environment
+- User and profile ORM models
+- Role and account-status enums
+- One-to-one user profile relationship
+- Database constraints and indexes
+- Initial users and profiles migration
 
 ---
 
@@ -251,6 +256,51 @@ alembic heads
 
 ---
 
+
+
+## Initial Database Models
+
+### Users
+
+Stores authentication and account-level information:
+
+- Email
+- Hashed password
+- Role
+- Account status
+- Email verification status
+
+### Profiles
+
+Stores public progress and profile information:
+
+- Username
+- Display name
+- Biography and avatar
+- Total XP
+- Current level
+- Current and longest streak
+
+The `users` and `profiles` tables have a one-to-one relationship.
+
+---
+
+## Creating Migrations
+
+Generate a migration after changing ORM models:
+
+```bash
+alembic revision --autogenerate -m "describe the database change"
+```
+
+Review the generated file, then apply it:
+
+```bash
+alembic upgrade head
+```
+
+
+
 ## Current Structure
 
 ```text
@@ -364,12 +414,12 @@ Current progress includes:
 The project will continue with the implementation of:
 
 - JWT authentication
-- User management
+- User management APIs
 - Role-based authorization
-- SQLAlchemy models
 - Repository layer
 - Service layer
-- Alembic database migrations
+- Skill assessment engine
+- Personalized learning recommendations
 - Redis caching
 - Celery background workers
 - Leaderboards

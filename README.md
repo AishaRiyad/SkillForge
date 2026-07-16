@@ -79,7 +79,7 @@ environment-based settings, and a health-check endpoint.
 * [ ] Configure Supabase PostgreSQL
 * [ ] Add database migrations
 * [ ] Implement authentication
-* [ ] Implement users and profiles
+* [x] Add initial user and profile database models
 * [ ] Implement roles and permissions
 * [ ] Implement categories
 * [ ] Implement challenges
