@@ -8,6 +8,7 @@ from app.models.enums import UserRole, UserStatus
 
 if TYPE_CHECKING:
     from app.models.profile import Profile
+    from app.models.refresh_token import RefreshToken
 
 
 class User(
@@ -64,7 +65,19 @@ class User(
         lazy="selectin",
     )
 
-    __table_args__ = (Index("ix_users_role_status", "role", "status"),)
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_users_role_status",
+            "role",
+            "status",
+        ),
+    )
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, email={self.email!r}, role={self.role!r})"

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -40,7 +41,9 @@ def create_access_token(user_id: UUID) -> str:
     return create_token(
         user_id=user_id,
         token_type=TokenType.ACCESS,
-        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
+        expires_delta=timedelta(
+            minutes=settings.access_token_expire_minutes,
+        ),
     )
 
 
@@ -48,7 +51,9 @@ def create_refresh_token(user_id: UUID) -> str:
     return create_token(
         user_id=user_id,
         token_type=TokenType.REFRESH,
-        expires_delta=timedelta(days=settings.refresh_token_expire_days),
+        expires_delta=timedelta(
+            days=settings.refresh_token_expire_days,
+        ),
     )
 
 
@@ -107,3 +112,9 @@ def get_token_user_id(
     )
 
     return UUID(str(payload["sub"]))
+
+
+def hash_token(token: str) -> str:
+    """Create a deterministic SHA-256 hash for token storage."""
+
+    return sha256(token.encode("utf-8")).hexdigest()

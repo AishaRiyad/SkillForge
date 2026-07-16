@@ -81,6 +81,9 @@ environment-based settings, and a health-check endpoint.
 - [x] Add initial user and profile database models
 - [x] Implement user registration
 - [x] Implement login and JWT authentication
+- [x] Add persistent refresh-token sessions
+- [ ] Rotate refresh tokens
+- [ ] Implement logout and session revocation
 - [ ] Implement roles and permissions
 - [ ] Implement categories
 - [ ] Implement challenges

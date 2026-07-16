@@ -10,6 +10,7 @@ from app.core.tokens import (
     create_token,
     decode_token,
     get_token_user_id,
+    hash_token,
 )
 from app.schemas.auth import TokenType
 
@@ -78,3 +79,14 @@ def test_modified_token_is_rejected() -> None:
             modified_token,
             expected_type=TokenType.ACCESS,
         )
+
+
+def test_hash_token_is_deterministic_and_hides_token() -> None:
+    token = "example-refresh-token"
+
+    first_hash = hash_token(token)
+    second_hash = hash_token(token)
+
+    assert first_hash == second_hash
+    assert first_hash != token
+    assert len(first_hash) == 64

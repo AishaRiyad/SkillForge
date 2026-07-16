@@ -51,6 +51,11 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Token expiration and claim validation
 - Inactive-account login protection
 - JWT and login unit tests
+- Persistent refresh-token sessions
+- Hashed refresh-token storage
+- Refresh-token revocation support
+- Per-user session revocation
+- Refresh-token expiration indexes
 
 ---
 
@@ -338,6 +343,23 @@ Passwords are hashed using Argon2 before database storage. Plain-text passwords
 are never stored in the database.
 
 ---
+
+## Refresh Token Sessions
+
+Refresh tokens are represented by database session records.
+
+For security, the raw refresh token is returned to the client but is never
+stored directly in PostgreSQL. SkillForge stores a SHA-256 hash that can be
+used to identify and revoke the session.
+
+Each session stores:
+
+- User ID
+- JWT ID (`jti`)
+- Token hash
+- Expiration time
+- Revocation time
+- Replacement token ID after rotation
 
 ## Repository Layer
 

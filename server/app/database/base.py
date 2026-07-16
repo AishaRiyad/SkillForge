@@ -45,4 +45,5 @@ def import_all_models() -> None:
     """Import ORM models so Alembic can discover their metadata."""
 
     from app.models.profile import Profile  # noqa: F401
+    from app.models.refresh_token import RefreshToken  # noqa: F401
     from app.models.user import User  # noqa: F401
