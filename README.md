@@ -70,35 +70,36 @@ environment-based settings, and a health-check endpoint.
 
 ## Development Roadmap
 
-* [x] Select the project idea
-* [x] Create the initial repository structure
-* [x] Initialize the FastAPI backend
-* [x] Configure application settings
-* [x] Configure initial testing tools
-* [x] Configure linting and type checking
-* [ ] Configure Supabase PostgreSQL
-* [ ] Add database migrations
-* [ ] Implement authentication
-* [x] Add initial user and profile database models
-* [ ] Implement roles and permissions
-* [ ] Implement categories
-* [ ] Implement challenges
-* [ ] Implement submissions
-* [ ] Implement the XP and level system
-* [ ] Implement achievements and badges
-* [ ] Implement missions and streaks
-* [ ] Configure Redis
-* [ ] Implement leaderboards
-* [ ] Configure Celery workers
-* [ ] Configure Celery Beat scheduled tasks
-* [ ] Add notifications
-* [ ] Add user progress reports
-* [ ] Add admin dashboard APIs
-* [ ] Add audit logs
-* [ ] Add automated tests
-* [ ] Add Docker Compose services
-* [ ] Add continuous integration with GitHub Actions
-* [ ] Build the frontend application
+- [x] Select the project idea
+- [x] Create the initial repository structure
+- [x] Initialize the FastAPI backend
+- [x] Configure application settings
+- [x] Configure initial testing tools
+- [x] Configure linting and type checking
+- [x] Configure Supabase PostgreSQL
+- [x] Configure the Alembic migration environment
+- [x] Add initial user and profile database models
+- [x] Implement user registration
+- [ ] Implement login and JWT authentication
+- [ ] Implement roles and permissions
+- [ ] Implement categories
+- [ ] Implement challenges
+- [ ] Implement submissions
+- [ ] Implement the XP and level system
+- [ ] Implement achievements and badges
+- [ ] Implement missions and streaks
+- [ ] Configure Redis
+- [ ] Implement leaderboards
+- [ ] Configure Celery workers
+- [ ] Configure Celery Beat scheduled tasks
+- [ ] Add notifications
+- [ ] Add user progress reports
+- [ ] Add admin dashboard APIs
+- [ ] Add audit logs
+- [ ] Add automated tests
+- [ ] Add Docker Compose services
+- [ ] Add continuous integration with GitHub Actions
+- [ ] Build the frontend application
 
 ## Project Documentation
 

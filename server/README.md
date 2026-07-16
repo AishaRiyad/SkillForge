@@ -41,6 +41,11 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - User repository abstraction
 - Case-insensitive email and username lookup
 - Repository, schema, and security unit tests
+- Transactional user registration
+- Duplicate email and username detection
+- Registration endpoint
+- Secure password hashing before storage
+- Registration service and API tests
 
 ---
 
@@ -348,6 +353,50 @@ Business rules and transaction coordination will be handled by the service layer
 
 ---
 
+
+---
+
+## Authentication Endpoints
+
+### Register User
+
+```http
+POST /api/v1/auth/register
+```
+
+Example request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPassword123",
+  "username": "skill_user",
+  "display_name": "Skill User"
+}
+```
+
+A successful request returns:
+
+```http
+HTTP/1.1 201 Created
+```
+
+The registration process performs the following steps:
+
+- Validates the incoming request
+- Checks for duplicate email addresses
+- Checks for duplicate usernames
+- Hashes the password using Argon2
+- Creates the user and profile within a single database transaction
+- Returns the created user information without exposing the password hash
+
+Passwords are validated and hashed before database storage.
+
+Password hashes are never included in API responses.
+
+---
+
+
 ## Current Structure
 
 ```text
@@ -458,6 +507,11 @@ Current progress includes:
 - User repository implementation
 - Automated testing infrastructure
 - Code quality tooling
+- Transactional user registration
+- Duplicate email and username validation
+- Registration API endpoint
+- Registration service layer
+- Repository and service unit tests
 
 ---
 
