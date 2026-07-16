@@ -7,7 +7,6 @@ from app.database.session import get_database_session
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 
-
 DatabaseSession = Annotated[
     AsyncSession,
     Depends(get_database_session),

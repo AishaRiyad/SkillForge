@@ -46,6 +46,11 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Registration endpoint
 - Secure password hashing before storage
 - Registration service and API tests
+- JWT access and refresh token generation
+- Secure login endpoint
+- Token expiration and claim validation
+- Inactive-account login protection
+- JWT and login unit tests
 
 ---
 
@@ -395,7 +400,88 @@ Passwords are validated and hashed before database storage.
 Password hashes are never included in API responses.
 
 ---
+### Login
 
+```http
+POST /api/v1/auth/login
+```
+
+Example request:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPassword123"
+}
+```
+
+A successful request returns:
+
+```http
+HTTP/1.1 200 OK
+```
+
+Response example:
+
+```json
+{
+  "user": {
+    "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "email": "user@example.com",
+    "role": "user",
+    "status": "active",
+    "is_email_verified": false,
+    "created_at": "2026-07-17T12:00:00Z",
+    "updated_at": "2026-07-17T12:00:00Z",
+    "profile": {
+      "user_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "username": "skill_user",
+      "display_name": "Skill User",
+      "bio": null,
+      "avatar_url": null,
+      "total_xp": 0,
+      "current_level": 1,
+      "current_streak": 0,
+      "longest_streak": 0,
+      "created_at": "2026-07-17T12:00:00Z",
+      "updated_at": "2026-07-17T12:00:00Z"
+    }
+  },
+  "tokens": {
+    "access_token": "<JWT_ACCESS_TOKEN>",
+    "refresh_token": "<JWT_REFRESH_TOKEN>",
+    "token_type": "bearer",
+    "access_token_expires_in": 1800
+  }
+}
+```
+
+A successful login returns an access token and a refresh token.
+
+Access tokens are short-lived and are used to authenticate API requests.
+
+Refresh tokens are intended to obtain new access tokens without requiring the
+user to sign in again.
+
+Login requests are rejected when:
+
+- The email does not exist
+- The password is incorrect
+- The account is inactive or suspended
+
+Passwords are verified securely using Argon2.
+
+JWT tokens include standard claims such as:
+
+- Subject (`sub`)
+- Token type (`type`)
+- Token ID (`jti`)
+- Issued at (`iat`)
+- Expiration (`exp`)
+- Issuer (`iss`)
+- Audience (`aud`)
+
+---
 
 ## Current Structure
 
@@ -512,6 +598,11 @@ Current progress includes:
 - Registration API endpoint
 - Registration service layer
 - Repository and service unit tests
+- JWT access and refresh token generation
+- Login service implementation
+- Secure login API endpoint
+- JWT validation
+- Login API and service tests
 
 ---
 
@@ -519,7 +610,6 @@ Current progress includes:
 
 The project will continue with the implementation of:
 
-- JWT authentication
 - User management APIs
 - Role-based authorization
 - Service layer

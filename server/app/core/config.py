@@ -28,6 +28,24 @@ class Settings(BaseSettings):
     database_max_overflow: int = 10
     database_pool_timeout: int = 30
 
+    jwt_secret_key: str = Field(
+        default="development-secret-change-me-123456",
+        min_length=32,
+        repr=False,
+    )
+    jwt_algorithm: str = "HS256"
+    jwt_issuer: str = "skillforge-api"
+    jwt_audience: str = "skillforge-client"
+
+    access_token_expire_minutes: int = Field(
+        default=30,
+        ge=1,
+    )
+    refresh_token_expire_days: int = Field(
+        default=7,
+        ge=1,
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -45,6 +63,14 @@ class Settings(BaseSettings):
     def validate_database_url(cls, value: str) -> str:
         if not value.startswith("postgresql+asyncpg://"):
             raise ValueError("DATABASE_URL must use the postgresql+asyncpg driver.")
+
+        return value
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def validate_jwt_secret_key(cls, value: str) -> str:
+        if len(value) < 32:
+            raise ValueError("JWT_SECRET_KEY must contain at least 32 characters.")
 
         return value
 

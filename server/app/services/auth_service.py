@@ -1,11 +1,15 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ConflictError
-from app.core.security import hash_password
+from app.core.config import settings
+from app.core.exceptions import ConflictError, UnauthorizedError
+from app.core.security import hash_password, verify_password
+from app.core.tokens import create_access_token, create_refresh_token
+from app.models.enums import UserStatus
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserRegistrationRequest
+from app.schemas.auth import LoginRequest, LoginResponse, TokenPair
+from app.schemas.user import UserRegistrationRequest, UserResponse
 
 
 class AuthService:
@@ -68,3 +72,30 @@ class AuthService:
         except Exception:
             await self.session.rollback()
             raise
+
+    async def login_user(
+        self,
+        login_data: LoginRequest,
+    ) -> LoginResponse:
+        user = await self.user_repository.get_by_email(str(login_data.email))
+
+        if user is None or not verify_password(
+            login_data.password,
+            user.hashed_password,
+        ):
+            raise UnauthorizedError(message="The email or password is incorrect.")
+
+        if user.status != UserStatus.ACTIVE:
+            raise UnauthorizedError(message="This account is not active.")
+
+        access_token = create_access_token(user.id)
+        refresh_token = create_refresh_token(user.id)
+
+        return LoginResponse(
+            user=UserResponse.model_validate(user),
+            tokens=TokenPair(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                access_token_expires_in=(settings.access_token_expire_minutes * 60),
+            ),
+        )

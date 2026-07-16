@@ -80,7 +80,7 @@ environment-based settings, and a health-check endpoint.
 - [x] Configure the Alembic migration environment
 - [x] Add initial user and profile database models
 - [x] Implement user registration
-- [ ] Implement login and JWT authentication
+- [x] Implement login and JWT authentication
 - [ ] Implement roles and permissions
 - [ ] Implement categories
 - [ ] Implement challenges

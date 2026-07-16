@@ -1,3 +1,9 @@
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    TokenPair,
+    TokenType,
+)
 from app.schemas.user import (
     ProfileResponse,
     UserRegistrationRequest,
@@ -5,7 +11,11 @@ from app.schemas.user import (
 )
 
 __all__ = [
+    "LoginRequest",
+    "LoginResponse",
     "ProfileResponse",
+    "TokenPair",
+    "TokenType",
     "UserRegistrationRequest",
     "UserResponse",
 ]

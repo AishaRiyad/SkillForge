@@ -8,7 +8,11 @@ from app.api.dependencies import get_auth_service
 from app.models.enums import UserRole, UserStatus
 from app.models.profile import Profile
 from app.models.user import User
-from app.schemas.user import UserRegistrationRequest
+from app.schemas.auth import LoginRequest, LoginResponse, TokenPair
+from app.schemas.user import (
+    UserRegistrationRequest,
+    UserResponse,
+)
 
 
 class FakeAuthService:
@@ -45,6 +49,28 @@ class FakeAuthService:
         user.profile.updated_at = current_time
 
         return user
+
+    async def login_user(
+        self,
+        login_data: LoginRequest,
+    ) -> LoginResponse:
+        registration = UserRegistrationRequest(
+            email=login_data.email,
+            password="StrongPassword123",
+            username="skill_user",
+            display_name="Skill User",
+        )
+
+        user = await self.register_user(registration)
+
+        return LoginResponse(
+            user=UserResponse.model_validate(user),
+            tokens=TokenPair(
+                access_token="test-access-token",
+                refresh_token="test-refresh-token",
+                access_token_expires_in=1800,
+            ),
+        )
 
 
 async def test_register_user_returns_created_user(
@@ -102,3 +128,47 @@ async def test_register_user_rejects_invalid_data(
 
     assert data["error"]["code"] == "VALIDATION_ERROR"
     assert data["request_id"] == response.headers["X-Request-ID"]
+
+
+async def test_login_returns_token_pair(
+    client: AsyncClient,
+    application: FastAPI,
+) -> None:
+    application.dependency_overrides[get_auth_service] = lambda: FakeAuthService()
+
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "USER@example.com",
+            "password": "StrongPassword123",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["user"]["email"] == "user@example.com"
+    assert data["tokens"] == {
+        "access_token": "test-access-token",
+        "refresh_token": "test-refresh-token",
+        "token_type": "bearer",
+        "access_token_expires_in": 1800,
+    }
+
+    application.dependency_overrides.clear()
+
+
+async def test_login_rejects_invalid_request(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "invalid-email",
+            "password": "",
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
