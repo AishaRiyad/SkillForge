@@ -48,3 +48,8 @@ class TokenPair(BaseModel):
 class LoginResponse(BaseModel):
     user: UserResponse
     tokens: TokenPair
+
+
+class LogoutAllResponse(BaseModel):
+    message: str
+    revoked_sessions: int

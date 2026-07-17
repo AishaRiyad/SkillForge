@@ -1,6 +1,7 @@
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
+    LogoutAllResponse,
     LogoutRequest,
     RefreshTokenRequest,
     TokenPair,
@@ -22,4 +23,5 @@ __all__ = [
     "TokenType",
     "UserRegistrationRequest",
     "UserResponse",
+    "LogoutAllResponse",
 ]

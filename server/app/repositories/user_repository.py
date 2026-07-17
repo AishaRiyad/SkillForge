@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.profile import Profile
 from app.models.user import User
@@ -15,7 +16,9 @@ class UserRepository:
         self,
         user_id: UUID,
     ) -> User | None:
-        statement = select(User).where(User.id == user_id)
+        statement = (
+            select(User).options(selectinload(User.profile)).where(User.id == user_id)
+        )
 
         result = await self.session.execute(statement)
 
@@ -27,7 +30,11 @@ class UserRepository:
     ) -> User | None:
         normalized_email = email.strip().lower()
 
-        statement = select(User).where(func.lower(User.email) == normalized_email)
+        statement = (
+            select(User)
+            .options(selectinload(User.profile))
+            .where(func.lower(User.email) == normalized_email)
+        )
 
         result = await self.session.execute(statement)
 

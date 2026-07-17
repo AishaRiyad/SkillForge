@@ -374,3 +374,27 @@ async def test_logout_is_idempotent_for_revoked_session() -> None:
 
     refresh_repository.revoke.assert_not_awaited()
     session.commit.assert_not_awaited()
+
+
+async def test_logout_all_revokes_all_user_sessions() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    user_repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
+
+    user = create_login_user()
+
+    refresh_repository.revoke_all_for_user.return_value = 3
+
+    service = AuthService(
+        session=session,
+        user_repository=user_repository,
+        refresh_token_repository=refresh_repository,
+    )
+
+    revoked_sessions = await service.logout_all(user)
+
+    assert revoked_sessions == 3
+
+    refresh_repository.revoke_all_for_user.assert_awaited_once_with(user.id)
+    session.commit.assert_awaited_once()
+    session.rollback.assert_not_awaited()

@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 
 import pytest
 from fastapi import FastAPI
@@ -23,3 +23,11 @@ async def client(
         base_url="http://test",
     ) as async_client:
         yield async_client
+
+
+@pytest.fixture(autouse=True)
+def clear_dependency_overrides(
+    application: FastAPI,
+) -> Iterator[None]:
+    yield
+    application.dependency_overrides.clear()

@@ -85,8 +85,10 @@ environment-based settings, and a health-check endpoint.
 - [x] Persist refresh tokens during login
 - [x] Rotate refresh tokens
 - [x] Implement session logout
-- [ ] Add authenticated-user dependencies
-- [ ] Add logout from all devices
+- [x] Add authenticated-user dependencies
+- [x] Add role-based authorization dependencies
+- [x] Add current-user endpoint
+- [x] Add logout from all devices
 - [ ] Implement roles and permissions
 - [ ] Implement categories
 - [ ] Implement challenges

@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Response, status
 
-from app.api.dependencies import AuthServiceDependency
+from app.api.dependencies import (
+    ActiveUser,
+    AuthServiceDependency,
+)
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
+    LogoutAllResponse,
     LogoutRequest,
     RefreshTokenRequest,
     TokenPair,
@@ -72,3 +76,21 @@ async def logout(
     await auth_service.logout(logout_data.refresh_token)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/logout-all",
+    response_model=LogoutAllResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Log out from all sessions",
+)
+async def logout_all(
+    current_user: ActiveUser,
+    auth_service: AuthServiceDependency,
+) -> LogoutAllResponse:
+    revoked_sessions = await auth_service.logout_all(current_user)
+
+    return LogoutAllResponse(
+        message="All refresh-token sessions were revoked.",
+        revoked_sessions=revoked_sessions,
+    )

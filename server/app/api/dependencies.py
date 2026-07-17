@@ -1,19 +1,31 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ForbiddenError, UnauthorizedError
+from app.core.tokens import get_token_user_id
 from app.database.session import get_database_session
+from app.models.enums import UserRole, UserStatus
+from app.models.user import User
 from app.repositories.refresh_token_repository import (
     RefreshTokenRepository,
 )
 from app.repositories.user_repository import UserRepository
+from app.schemas.auth import TokenType
 from app.services.auth_service import AuthService
 
 DatabaseSession = Annotated[
     AsyncSession,
     Depends(get_database_session),
 ]
+
+bearer_scheme = HTTPBearer(
+    scheme_name="BearerAuth",
+    description="Enter the JWT access token.",
+    auto_error=False,
+)
 
 
 def get_auth_service(
@@ -32,4 +44,89 @@ def get_auth_service(
 AuthServiceDependency = Annotated[
     AuthService,
     Depends(get_auth_service),
+]
+
+
+async def get_current_user(
+    session: DatabaseSession,
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None,
+        Security(bearer_scheme),
+    ],
+) -> User:
+    if credentials is None:
+        raise UnauthorizedError(message="A valid access token is required.")
+
+    if credentials.scheme.lower() != "bearer":
+        raise UnauthorizedError(message="The authentication scheme must be Bearer.")
+
+    user_id = get_token_user_id(
+        credentials.credentials,
+        expected_type=TokenType.ACCESS,
+    )
+
+    repository = UserRepository(session)
+    user = await repository.get_by_id(user_id)
+
+    if user is None:
+        raise UnauthorizedError(message="The authenticated user no longer exists.")
+
+    return user
+
+
+CurrentUser = Annotated[
+    User,
+    Depends(get_current_user),
+]
+
+
+async def get_active_user(
+    current_user: CurrentUser,
+) -> User:
+    if current_user.status != UserStatus.ACTIVE:
+        raise UnauthorizedError(message="This account is not active.")
+
+    return current_user
+
+
+ActiveUser = Annotated[
+    User,
+    Depends(get_active_user),
+]
+
+
+async def require_admin(
+    current_user: ActiveUser,
+) -> User:
+    if current_user.role != UserRole.ADMIN:
+        raise ForbiddenError(message="Administrator permission is required.")
+
+    return current_user
+
+
+AdminUser = Annotated[
+    User,
+    Depends(require_admin),
+]
+
+
+async def require_moderator_or_admin(
+    current_user: ActiveUser,
+) -> User:
+    allowed_roles = {
+        UserRole.MODERATOR,
+        UserRole.ADMIN,
+    }
+
+    if current_user.role not in allowed_roles:
+        raise ForbiddenError(
+            message="Moderator or administrator permission is required."
+        )
+
+    return current_user
+
+
+ModeratorOrAdmin = Annotated[
+    User,
+    Depends(require_moderator_or_admin),
 ]

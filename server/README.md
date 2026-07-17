@@ -61,6 +61,12 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Session revocation during logout
 - Replay protection for rotated tokens
 - Database locking during token rotation
+- Bearer access-token authentication
+- Authenticated-user dependency
+- Active-account validation
+- Role-based authorization dependencies
+- Current-user profile endpoint
+- Logout from all refresh-token sessions
 
 ---
 
@@ -556,6 +562,39 @@ HTTP/1.1 204 No Content
 Logout revokes the supplied refresh-token session.
 
 Subsequent attempts to use that token for rotation are rejected.
+
+---
+
+
+---
+
+## Protected Endpoints
+
+Protected endpoints require an access token in the `Authorization` header.
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+### Current User
+
+```http
+GET /api/v1/users/me
+```
+
+Returns the authenticated user's account and profile information.
+
+---
+
+### Logout from All Sessions
+
+```http
+POST /api/v1/auth/logout-all
+```
+
+Revokes every active refresh-token session belonging to the authenticated user.
+
+Existing access tokens remain valid until their configured expiration.
 
 ---
 

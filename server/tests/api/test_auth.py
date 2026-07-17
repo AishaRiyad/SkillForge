@@ -4,7 +4,10 @@ from uuid import uuid4
 from fastapi import FastAPI
 from httpx import AsyncClient
 
-from app.api.dependencies import get_auth_service
+from app.api.dependencies import (
+    get_auth_service,
+    get_current_user,
+)
 from app.models.enums import UserRole, UserStatus
 from app.models.profile import Profile
 from app.models.user import User
@@ -91,6 +94,12 @@ class FakeAuthService:
         raw_refresh_token: str,
     ) -> None:
         return None
+
+    async def logout_all(
+        self,
+        user: User,
+    ) -> int:
+        return 3
 
 
 async def test_register_user_returns_created_user(
@@ -233,5 +242,39 @@ async def test_logout_returns_no_content(
 
     assert response.status_code == 204
     assert response.content == b""
+
+    application.dependency_overrides.clear()
+
+
+async def test_logout_all_revokes_user_sessions(
+    client: AsyncClient,
+    application: FastAPI,
+) -> None:
+    fake_service = FakeAuthService()
+
+    test_user = await fake_service.register_user(
+        UserRegistrationRequest(
+            email="user@example.com",
+            password="StrongPassword123",
+            username="skill_user",
+            display_name="Skill User",
+        )
+    )
+
+    application.dependency_overrides[get_auth_service] = lambda: fake_service
+    application.dependency_overrides[get_current_user] = lambda: test_user
+
+    response = await client.post(
+        "/api/v1/auth/logout-all",
+        headers={
+            "Authorization": "Bearer test-access-token",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "All refresh-token sessions were revoked.",
+        "revoked_sessions": 3,
+    }
 
     application.dependency_overrides.clear()

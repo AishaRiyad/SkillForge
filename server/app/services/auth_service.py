@@ -117,6 +117,7 @@ class AuthService:
                 user=UserResponse.model_validate(user),
                 tokens=tokens,
             )
+
         except Exception:
             await self.session.rollback()
             raise
@@ -200,6 +201,23 @@ class AuthService:
             )
 
             await self.session.commit()
+
+        except Exception:
+            await self.session.rollback()
+            raise
+
+    async def logout_all(
+        self,
+        user: User,
+    ) -> int:
+        try:
+            revoked_sessions = await self.refresh_token_repository.revoke_all_for_user(
+                user.id
+            )
+
+            await self.session.commit()
+
+            return revoked_sessions
 
         except Exception:
             await self.session.rollback()
