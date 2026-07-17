@@ -72,6 +72,11 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Username uniqueness validation
 - Transactional profile updates
 - Profile schema, repository, service, and API tests
+- Category CRUD operations
+- Category pagination
+- Automatic category slugs
+- Soft category deletion
+- Administrator-only category management
 
 ---
 
@@ -580,6 +585,38 @@ Protected endpoints require an access token in the `Authorization` header.
 ```http
 Authorization: Bearer ACCESS_TOKEN
 ```
+
+## Category Management
+
+SkillForge supports category management for organizing learning content.
+
+### Public Endpoints
+
+```http
+GET /api/v1/categories
+GET /api/v1/categories/{category_id}
+```
+
+### Administrator Endpoints
+
+```http
+POST /api/v1/categories
+PATCH /api/v1/categories/{category_id}
+DELETE /api/v1/categories/{category_id}
+```
+
+Categories use automatically generated slugs and soft deletion.
+
+Deleted categories remain stored in PostgreSQL but are excluded from public queries.
+
+### Pagination
+
+Category lists support pagination:
+
+```http
+GET /api/v1/categories?page=1&page_size=20
+```
+
 
 ### Current User
 

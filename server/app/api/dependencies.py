@@ -9,6 +9,7 @@ from app.core.tokens import get_token_user_id
 from app.database.session import get_database_session
 from app.models.enums import UserRole, UserStatus
 from app.models.user import User
+from app.repositories.category_repository import CategoryRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.refresh_token_repository import (
     RefreshTokenRepository,
@@ -16,6 +17,7 @@ from app.repositories.refresh_token_repository import (
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import TokenType
 from app.services.auth_service import AuthService
+from app.services.category_service import CategoryService
 from app.services.user_service import UserService
 
 DatabaseSession = Annotated[
@@ -148,4 +150,21 @@ async def require_moderator_or_admin(
 ModeratorOrAdmin = Annotated[
     User,
     Depends(require_moderator_or_admin),
+]
+
+
+def get_category_service(
+    session: DatabaseSession,
+) -> CategoryService:
+    repository = CategoryRepository(session)
+
+    return CategoryService(
+        session=session,
+        category_repository=repository,
+    )
+
+
+CategoryServiceDependency = Annotated[
+    CategoryService,
+    Depends(get_category_service),
 ]
