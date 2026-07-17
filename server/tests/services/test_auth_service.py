@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -7,11 +7,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, UnauthorizedError
 from app.core.security import hash_password
+from app.core.tokens import (
+    create_refresh_token,
+    get_token_metadata,
+    hash_token,
+)
 from app.models.enums import UserRole, UserStatus
 from app.models.profile import Profile
+from app.models.refresh_token import RefreshToken
 from app.models.user import User
+from app.repositories.refresh_token_repository import (
+    RefreshTokenRepository,
+)
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest
+from app.schemas.auth import LoginRequest, TokenType
 from app.schemas.user import UserRegistrationRequest
 from app.services.auth_service import AuthService
 
@@ -64,6 +73,7 @@ def create_login_user(
 async def test_register_user_creates_and_commits_user() -> None:
     session = AsyncMock(spec=AsyncSession)
     repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
 
     created_user = User(
         email="user@example.com",
@@ -77,6 +87,7 @@ async def test_register_user_creates_and_commits_user() -> None:
     service = AuthService(
         session=session,
         user_repository=repository,
+        refresh_token_repository=refresh_repository,
     )
 
     result = await service.register_user(create_registration_data())
@@ -95,12 +106,14 @@ async def test_register_user_creates_and_commits_user() -> None:
 async def test_register_user_rejects_duplicate_email() -> None:
     session = AsyncMock(spec=AsyncSession)
     repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
 
     repository.get_by_email.return_value = Mock(spec=User)
 
     service = AuthService(
         session=session,
         user_repository=repository,
+        refresh_token_repository=refresh_repository,
     )
 
     with pytest.raises(ConflictError) as exception_info:
@@ -117,6 +130,7 @@ async def test_register_user_rejects_duplicate_email() -> None:
 async def test_register_user_rejects_duplicate_username() -> None:
     session = AsyncMock(spec=AsyncSession)
     repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
 
     repository.get_by_email.return_value = None
     repository.get_by_username.return_value = Mock(spec=User)
@@ -124,6 +138,7 @@ async def test_register_user_rejects_duplicate_username() -> None:
     service = AuthService(
         session=session,
         user_repository=repository,
+        refresh_token_repository=refresh_repository,
     )
 
     with pytest.raises(ConflictError) as exception_info:
@@ -139,12 +154,14 @@ async def test_register_user_rejects_duplicate_username() -> None:
 async def test_login_returns_access_and_refresh_tokens() -> None:
     session = AsyncMock(spec=AsyncSession)
     repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
 
     repository.get_by_email.return_value = create_login_user()
 
     service = AuthService(
         session=session,
         user_repository=repository,
+        refresh_token_repository=refresh_repository,
     )
 
     response = await service.login_user(
@@ -159,16 +176,21 @@ async def test_login_returns_access_and_refresh_tokens() -> None:
     assert response.tokens.refresh_token
     assert response.user.email == "user@example.com"
 
+    refresh_repository.create.assert_awaited_once()
+    session.commit.assert_awaited_once()
+
 
 async def test_login_rejects_unknown_email() -> None:
     session = AsyncMock(spec=AsyncSession)
     repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
 
     repository.get_by_email.return_value = None
 
     service = AuthService(
         session=session,
         user_repository=repository,
+        refresh_token_repository=refresh_repository,
     )
 
     with pytest.raises(UnauthorizedError):
@@ -179,16 +201,21 @@ async def test_login_rejects_unknown_email() -> None:
             )
         )
 
+    refresh_repository.create.assert_not_awaited()
+    session.commit.assert_not_awaited()
+
 
 async def test_login_rejects_wrong_password() -> None:
     session = AsyncMock(spec=AsyncSession)
     repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
 
     repository.get_by_email.return_value = create_login_user()
 
     service = AuthService(
         session=session,
         user_repository=repository,
+        refresh_token_repository=refresh_repository,
     )
 
     with pytest.raises(UnauthorizedError):
@@ -199,10 +226,14 @@ async def test_login_rejects_wrong_password() -> None:
             )
         )
 
+    refresh_repository.create.assert_not_awaited()
+    session.commit.assert_not_awaited()
+
 
 async def test_login_rejects_inactive_account() -> None:
     session = AsyncMock(spec=AsyncSession)
     repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
 
     repository.get_by_email.return_value = create_login_user(
         status=UserStatus.SUSPENDED
@@ -211,6 +242,7 @@ async def test_login_rejects_inactive_account() -> None:
     service = AuthService(
         session=session,
         user_repository=repository,
+        refresh_token_repository=refresh_repository,
     )
 
     with pytest.raises(UnauthorizedError):
@@ -220,3 +252,125 @@ async def test_login_rejects_inactive_account() -> None:
                 password="StrongPassword123",
             )
         )
+
+    refresh_repository.create.assert_not_awaited()
+    session.commit.assert_not_awaited()
+
+
+async def test_refresh_rotates_stored_token() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    user_repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
+
+    user = create_login_user()
+    raw_token = create_refresh_token(user.id)
+
+    metadata = get_token_metadata(
+        raw_token,
+        expected_type=TokenType.REFRESH,
+    )
+
+    stored_token = RefreshToken(
+        user_id=user.id,
+        jti=metadata.jti,
+        token_hash=hash_token(raw_token),
+        expires_at=metadata.expires_at,
+    )
+
+    user_repository.get_by_id.return_value = user
+    refresh_repository.get_active_by_token_hash.return_value = stored_token
+
+    service = AuthService(
+        session=session,
+        user_repository=user_repository,
+        refresh_token_repository=refresh_repository,
+    )
+
+    tokens = await service.refresh_tokens(raw_token)
+
+    assert tokens.access_token
+    assert tokens.refresh_token
+    assert tokens.refresh_token != raw_token
+
+    refresh_repository.create.assert_awaited_once()
+    refresh_repository.revoke.assert_awaited_once()
+    session.commit.assert_awaited_once()
+
+
+async def test_refresh_rejects_revoked_or_missing_session() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    user_repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
+
+    user_id = uuid4()
+    raw_token = create_refresh_token(user_id)
+
+    refresh_repository.get_active_by_token_hash.return_value = None
+
+    service = AuthService(
+        session=session,
+        user_repository=user_repository,
+        refresh_token_repository=refresh_repository,
+    )
+
+    with pytest.raises(UnauthorizedError):
+        await service.refresh_tokens(raw_token)
+
+    refresh_repository.create.assert_not_awaited()
+    refresh_repository.revoke.assert_not_awaited()
+    session.commit.assert_not_awaited()
+
+
+async def test_logout_revokes_active_session() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    user_repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
+
+    user_id = uuid4()
+    raw_token = create_refresh_token(user_id)
+
+    metadata = get_token_metadata(
+        raw_token,
+        expected_type=TokenType.REFRESH,
+    )
+
+    stored_token = RefreshToken(
+        user_id=user_id,
+        jti=metadata.jti,
+        token_hash=hash_token(raw_token),
+        expires_at=(datetime.now(UTC) + timedelta(days=7)),
+    )
+
+    refresh_repository.get_active_by_token_hash.return_value = stored_token
+
+    service = AuthService(
+        session=session,
+        user_repository=user_repository,
+        refresh_token_repository=refresh_repository,
+    )
+
+    await service.logout(raw_token)
+
+    refresh_repository.revoke.assert_awaited_once_with(stored_token)
+    session.commit.assert_awaited_once()
+
+
+async def test_logout_is_idempotent_for_revoked_session() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    user_repository = AsyncMock(spec=UserRepository)
+    refresh_repository = AsyncMock(spec=RefreshTokenRepository)
+
+    raw_token = create_refresh_token(uuid4())
+
+    refresh_repository.get_active_by_token_hash.return_value = None
+
+    service = AuthService(
+        session=session,
+        user_repository=user_repository,
+        refresh_token_repository=refresh_repository,
+    )
+
+    await service.logout(raw_token)
+
+    refresh_repository.revoke.assert_not_awaited()
+    session.commit.assert_not_awaited()

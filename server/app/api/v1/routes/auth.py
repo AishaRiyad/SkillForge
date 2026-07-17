@@ -1,7 +1,13 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 
 from app.api.dependencies import AuthServiceDependency
-from app.schemas.auth import LoginRequest, LoginResponse
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    LogoutRequest,
+    RefreshTokenRequest,
+    TokenPair,
+)
 from app.schemas.user import (
     UserRegistrationRequest,
     UserResponse,
@@ -39,3 +45,30 @@ async def login_user(
     auth_service: AuthServiceDependency,
 ) -> LoginResponse:
     return await auth_service.login_user(login_data)
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenPair,
+    status_code=status.HTTP_200_OK,
+    summary="Rotate a refresh token",
+)
+async def refresh_tokens(
+    refresh_data: RefreshTokenRequest,
+    auth_service: AuthServiceDependency,
+) -> TokenPair:
+    return await auth_service.refresh_tokens(refresh_data.refresh_token)
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Log out the current session",
+)
+async def logout(
+    logout_data: LogoutRequest,
+    auth_service: AuthServiceDependency,
+) -> Response:
+    await auth_service.logout(logout_data.refresh_token)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

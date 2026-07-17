@@ -72,7 +72,17 @@ def test_expired_token_is_rejected() -> None:
 
 def test_modified_token_is_rejected() -> None:
     token = create_access_token(uuid4())
-    modified_token = f"{token[:-1]}x"
+
+    header, payload, signature = token.split(".")
+
+    middle_index = len(signature) // 2
+    replacement = "a" if signature[middle_index] != "a" else "b"
+
+    modified_signature = (
+        signature[:middle_index] + replacement + signature[middle_index + 1 :]
+    )
+
+    modified_token = f"{header}.{payload}.{modified_signature}"
 
     with pytest.raises(UnauthorizedError):
         decode_token(

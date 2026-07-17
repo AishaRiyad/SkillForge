@@ -8,7 +8,11 @@ from app.api.dependencies import get_auth_service
 from app.models.enums import UserRole, UserStatus
 from app.models.profile import Profile
 from app.models.user import User
-from app.schemas.auth import LoginRequest, LoginResponse, TokenPair
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    TokenPair,
+)
 from app.schemas.user import (
     UserRegistrationRequest,
     UserResponse,
@@ -71,6 +75,22 @@ class FakeAuthService:
                 access_token_expires_in=1800,
             ),
         )
+
+    async def refresh_tokens(
+        self,
+        raw_refresh_token: str,
+    ) -> TokenPair:
+        return TokenPair(
+            access_token="rotated-access-token",
+            refresh_token="rotated-refresh-token",
+            access_token_expires_in=1800,
+        )
+
+    async def logout(
+        self,
+        raw_refresh_token: str,
+    ) -> None:
+        return None
 
 
 async def test_register_user_returns_created_user(
@@ -172,3 +192,46 @@ async def test_login_rejects_invalid_request(
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_refresh_returns_rotated_token_pair(
+    client: AsyncClient,
+    application: FastAPI,
+) -> None:
+    application.dependency_overrides[get_auth_service] = lambda: FakeAuthService()
+
+    response = await client.post(
+        "/api/v1/auth/refresh",
+        json={
+            "refresh_token": "existing-refresh-token",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "access_token": "rotated-access-token",
+        "refresh_token": "rotated-refresh-token",
+        "token_type": "bearer",
+        "access_token_expires_in": 1800,
+    }
+
+    application.dependency_overrides.clear()
+
+
+async def test_logout_returns_no_content(
+    client: AsyncClient,
+    application: FastAPI,
+) -> None:
+    application.dependency_overrides[get_auth_service] = lambda: FakeAuthService()
+
+    response = await client.post(
+        "/api/v1/auth/logout",
+        json={
+            "refresh_token": "existing-refresh-token",
+        },
+    )
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+    application.dependency_overrides.clear()

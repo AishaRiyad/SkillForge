@@ -82,8 +82,11 @@ environment-based settings, and a health-check endpoint.
 - [x] Implement user registration
 - [x] Implement login and JWT authentication
 - [x] Add persistent refresh-token sessions
-- [ ] Rotate refresh tokens
-- [ ] Implement logout and session revocation
+- [x] Persist refresh tokens during login
+- [x] Rotate refresh tokens
+- [x] Implement session logout
+- [ ] Add authenticated-user dependencies
+- [ ] Add logout from all devices
 - [ ] Implement roles and permissions
 - [ ] Implement categories
 - [ ] Implement challenges
@@ -103,6 +106,7 @@ environment-based settings, and a health-check endpoint.
 - [ ] Add Docker Compose services
 - [ ] Add continuous integration with GitHub Actions
 - [ ] Build the frontend application
+
 
 ## Project Documentation
 

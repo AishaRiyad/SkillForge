@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from typing import Any
@@ -9,6 +10,13 @@ from jwt import InvalidTokenError
 from app.core.config import settings
 from app.core.exceptions import UnauthorizedError
 from app.schemas.auth import TokenType
+
+
+@dataclass(frozen=True, slots=True)
+class TokenMetadata:
+    user_id: UUID
+    jti: UUID
+    expires_at: datetime
 
 
 def create_token(
@@ -118,3 +126,32 @@ def hash_token(token: str) -> str:
     """Create a deterministic SHA-256 hash for token storage."""
 
     return sha256(token.encode("utf-8")).hexdigest()
+
+
+def get_token_metadata(
+    token: str,
+    *,
+    expected_type: TokenType,
+) -> TokenMetadata:
+    payload = decode_token(
+        token,
+        expected_type=expected_type,
+    )
+
+    try:
+        user_id = UUID(str(payload["sub"]))
+        jti = UUID(str(payload["jti"]))
+        expires_at = datetime.fromtimestamp(
+            int(payload["exp"]),
+            tz=UTC,
+        )
+    except (KeyError, TypeError, ValueError) as exception:
+        raise UnauthorizedError(
+            message="The authentication token metadata is invalid."
+        ) from exception
+
+    return TokenMetadata(
+        user_id=user_id,
+        jti=jti,
+        expires_at=expires_at,
+    )

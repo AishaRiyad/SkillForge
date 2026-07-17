@@ -18,10 +18,24 @@ class LoginRequest(BaseModel):
         repr=False,
     )
 
-    @field_validator("email")
+    @field_validator("email", mode="before")
     @classmethod
-    def normalize_email(cls, value: EmailStr) -> str:
+    def normalize_email(cls, value: object) -> str:
         return str(value).strip().lower()
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(
+        min_length=1,
+        repr=False,
+    )
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str = Field(
+        min_length=1,
+        repr=False,
+    )
 
 
 class TokenPair(BaseModel):

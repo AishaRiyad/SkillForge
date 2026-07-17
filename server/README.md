@@ -56,6 +56,11 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Refresh-token revocation support
 - Per-user session revocation
 - Refresh-token expiration indexes
+- Refresh-token persistence during login
+- Refresh-token rotation
+- Session revocation during logout
+- Replay protection for rotated tokens
+- Database locking during token rotation
 
 ---
 
@@ -502,6 +507,55 @@ JWT tokens include standard claims such as:
 - Expiration (`exp`)
 - Issuer (`iss`)
 - Audience (`aud`)
+
+---
+
+### Refresh Tokens
+
+```http
+POST /api/v1/auth/refresh
+```
+
+Example request:
+
+```json
+{
+  "refresh_token": "<JWT_REFRESH_TOKEN>"
+}
+```
+
+The supplied refresh token is validated against its hashed database session.
+
+A successful request revokes the previous refresh-token session and returns a
+new access and refresh token pair.
+
+This rotation mechanism helps prevent reuse of an old refresh token.
+
+---
+
+### Logout
+
+```http
+POST /api/v1/auth/logout
+```
+
+Example request:
+
+```json
+{
+  "refresh_token": "<JWT_REFRESH_TOKEN>"
+}
+```
+
+A successful logout returns:
+
+```http
+HTTP/1.1 204 No Content
+```
+
+Logout revokes the supplied refresh-token session.
+
+Subsequent attempts to use that token for rotation are rejected.
 
 ---
 

@@ -1,15 +1,34 @@
+from uuid import UUID
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import ConflictError, UnauthorizedError
 from app.core.security import hash_password, verify_password
-from app.core.tokens import create_access_token, create_refresh_token
+from app.core.tokens import (
+    create_access_token,
+    create_refresh_token,
+    get_token_metadata,
+    hash_token,
+)
 from app.models.enums import UserStatus
+from app.models.refresh_token import RefreshToken
 from app.models.user import User
+from app.repositories.refresh_token_repository import (
+    RefreshTokenRepository,
+)
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest, LoginResponse, TokenPair
-from app.schemas.user import UserRegistrationRequest, UserResponse
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    TokenPair,
+    TokenType,
+)
+from app.schemas.user import (
+    UserRegistrationRequest,
+    UserResponse,
+)
 
 
 class AuthService:
@@ -17,9 +36,11 @@ class AuthService:
         self,
         session: AsyncSession,
         user_repository: UserRepository,
+        refresh_token_repository: RefreshTokenRepository,
     ) -> None:
         self.session = session
         self.user_repository = user_repository
+        self.refresh_token_repository = refresh_token_repository
 
     async def register_user(
         self,
@@ -85,17 +106,148 @@ class AuthService:
         ):
             raise UnauthorizedError(message="The email or password is incorrect.")
 
-        if user.status != UserStatus.ACTIVE:
-            raise UnauthorizedError(message="This account is not active.")
+        self._ensure_user_is_active(user)
 
+        try:
+            tokens = await self._create_token_pair(user)
+
+            await self.session.commit()
+
+            return LoginResponse(
+                user=UserResponse.model_validate(user),
+                tokens=tokens,
+            )
+        except Exception:
+            await self.session.rollback()
+            raise
+
+    async def refresh_tokens(
+        self,
+        raw_refresh_token: str,
+    ) -> TokenPair:
+        metadata = get_token_metadata(
+            raw_refresh_token,
+            expected_type=TokenType.REFRESH,
+        )
+
+        stored_token = await self.refresh_token_repository.get_active_by_token_hash(
+            hash_token(raw_refresh_token),
+            lock_for_update=True,
+        )
+
+        self._validate_stored_refresh_token(
+            stored_token=stored_token,
+            expected_user_id=metadata.user_id,
+            expected_jti=metadata.jti,
+        )
+
+        user = await self.user_repository.get_by_id(metadata.user_id)
+
+        if user is None:
+            raise UnauthorizedError(message="The token user no longer exists.")
+
+        self._ensure_user_is_active(user)
+
+        try:
+            new_tokens = await self._create_token_pair(user)
+
+            new_metadata = get_token_metadata(
+                new_tokens.refresh_token,
+                expected_type=TokenType.REFRESH,
+            )
+
+            assert stored_token is not None
+
+            await self.refresh_token_repository.revoke(
+                stored_token,
+                replaced_by_jti=new_metadata.jti,
+            )
+
+            await self.session.commit()
+
+            return new_tokens
+
+        except Exception:
+            await self.session.rollback()
+            raise
+
+    async def logout(
+        self,
+        raw_refresh_token: str,
+    ) -> None:
+        metadata = get_token_metadata(
+            raw_refresh_token,
+            expected_type=TokenType.REFRESH,
+        )
+
+        stored_token = await self.refresh_token_repository.get_active_by_token_hash(
+            hash_token(raw_refresh_token),
+            lock_for_update=True,
+        )
+
+        if stored_token is None:
+            return
+
+        self._validate_stored_refresh_token(
+            stored_token=stored_token,
+            expected_user_id=metadata.user_id,
+            expected_jti=metadata.jti,
+        )
+
+        try:
+            await self.refresh_token_repository.revoke(
+                stored_token,
+            )
+
+            await self.session.commit()
+
+        except Exception:
+            await self.session.rollback()
+            raise
+
+    async def _create_token_pair(
+        self,
+        user: User,
+    ) -> TokenPair:
         access_token = create_access_token(user.id)
         refresh_token = create_refresh_token(user.id)
 
-        return LoginResponse(
-            user=UserResponse.model_validate(user),
-            tokens=TokenPair(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                access_token_expires_in=(settings.access_token_expire_minutes * 60),
-            ),
+        refresh_metadata = get_token_metadata(
+            refresh_token,
+            expected_type=TokenType.REFRESH,
         )
+
+        await self.refresh_token_repository.create(
+            user_id=user.id,
+            jti=refresh_metadata.jti,
+            token_hash=hash_token(refresh_token),
+            expires_at=refresh_metadata.expires_at,
+        )
+
+        return TokenPair(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            access_token_expires_in=(settings.access_token_expire_minutes * 60),
+        )
+
+    @staticmethod
+    def _ensure_user_is_active(
+        user: User,
+    ) -> None:
+        if user.status != UserStatus.ACTIVE:
+            raise UnauthorizedError(message="This account is not active.")
+
+    @staticmethod
+    def _validate_stored_refresh_token(
+        *,
+        stored_token: RefreshToken | None,
+        expected_user_id: UUID,
+        expected_jti: UUID,
+    ) -> None:
+        if stored_token is None:
+            raise UnauthorizedError(
+                message="The refresh token is invalid or has been revoked."
+            )
+
+        if stored_token.user_id != expected_user_id or stored_token.jti != expected_jti:
+            raise UnauthorizedError(message="The refresh token session is invalid.")

@@ -44,6 +44,8 @@ class RefreshTokenRepository:
     async def get_active_by_token_hash(
         self,
         token_hash: str,
+        *,
+        lock_for_update: bool = False,
     ) -> RefreshToken | None:
         current_time = datetime.now(UTC)
 
@@ -52,6 +54,9 @@ class RefreshTokenRepository:
             RefreshToken.revoked_at.is_(None),
             RefreshToken.expires_at > current_time,
         )
+
+        if lock_for_update:
+            statement = statement.with_for_update()
 
         result = await self.session.execute(statement)
 
