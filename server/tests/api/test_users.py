@@ -4,10 +4,28 @@ from uuid import uuid4
 from fastapi import FastAPI
 from httpx import AsyncClient
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import (
+    get_current_user,
+    get_user_service,
+)
 from app.models.enums import UserRole, UserStatus
 from app.models.profile import Profile
 from app.models.user import User
+from app.schemas.user import ProfileUpdateRequest
+
+
+class FakeUserService:
+    async def update_profile(
+        self,
+        user: User,
+        update_request: ProfileUpdateRequest,
+    ) -> Profile:
+        update_data = update_request.model_dump(exclude_unset=True)
+
+        for field_name, value in update_data.items():
+            setattr(user.profile, field_name, value)
+
+        return user.profile
 
 
 def create_test_user(
@@ -85,3 +103,70 @@ async def test_get_me_rejects_missing_access_token(
 
     assert data["error"]["code"] == "UNAUTHORIZED"
     assert data["request_id"] == response.headers["X-Request-ID"]
+
+
+async def test_update_profile_returns_updated_profile(
+    client: AsyncClient,
+    application: FastAPI,
+) -> None:
+    test_user = create_test_user()
+
+    application.dependency_overrides[get_current_user] = lambda: test_user
+    application.dependency_overrides[get_user_service] = lambda: FakeUserService()
+
+    response = await client.patch(
+        "/api/v1/users/me/profile",
+        headers={
+            "Authorization": "Bearer test-access-token",
+        },
+        json={
+            "username": "updated_user",
+            "display_name": "Updated User",
+            "bio": "Learning FastAPI",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["username"] == "updated_user"
+    assert data["display_name"] == "Updated User"
+    assert data["bio"] == "Learning FastAPI"
+    assert data["total_xp"] == 0
+
+
+async def test_update_profile_rejects_invalid_username(
+    client: AsyncClient,
+    application: FastAPI,
+) -> None:
+    test_user = create_test_user()
+
+    application.dependency_overrides[get_current_user] = lambda: test_user
+
+    response = await client.patch(
+        "/api/v1/users/me/profile",
+        headers={
+            "Authorization": "Bearer test-access-token",
+        },
+        json={
+            "username": "invalid username",
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == ("VALIDATION_ERROR")
+
+
+async def test_update_profile_requires_authentication(
+    client: AsyncClient,
+) -> None:
+    response = await client.patch(
+        "/api/v1/users/me/profile",
+        json={
+            "display_name": "Updated User",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "UNAUTHORIZED"

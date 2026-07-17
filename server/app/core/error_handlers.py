@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -53,13 +54,20 @@ async def validation_exception_handler(
     request: Request,
     exception: RequestValidationError,
 ) -> JSONResponse:
+    validation_errors = jsonable_encoder(
+        exception.errors(),
+        custom_encoder={
+            ValueError: str,
+        },
+    )
+
     return JSONResponse(
         status_code=422,
         content=create_error_content(
             request=request,
             code="VALIDATION_ERROR",
             message="The submitted data is invalid.",
-            details=exception.errors(),
+            details=validation_errors,
         ),
     )
 

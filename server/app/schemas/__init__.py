@@ -9,6 +9,7 @@ from app.schemas.auth import (
 )
 from app.schemas.user import (
     ProfileResponse,
+    ProfileUpdateRequest,
     UserRegistrationRequest,
     UserResponse,
 )
@@ -24,4 +25,5 @@ __all__ = [
     "UserRegistrationRequest",
     "UserResponse",
     "LogoutAllResponse",
+    "ProfileUpdateRequest",
 ]

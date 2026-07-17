@@ -67,6 +67,11 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Role-based authorization dependencies
 - Current-user profile endpoint
 - Logout from all refresh-token sessions
+- Partial profile updates
+- Profile repository and service layers
+- Username uniqueness validation
+- Transactional profile updates
+- Profile schema, repository, service, and API tests
 
 ---
 
@@ -583,6 +588,31 @@ GET /api/v1/users/me
 ```
 
 Returns the authenticated user's account and profile information.
+
+---
+
+### Update Current Profile
+
+```http
+PATCH /api/v1/users/me/profile
+```
+
+Example request:
+
+```json
+{
+  "username": "skill_user",
+  "display_name": "Skill User",
+  "bio": "Learning backend development",
+  "avatar_url": "https://example.com/avatar.png"
+}
+```
+
+All fields are optional.
+
+Only the fields included in the request are updated.
+
+Sending `null` for `bio` or `avatar_url` clears the stored value.
 
 ---
 

@@ -73,6 +73,87 @@ class UserRegistrationRequest(BaseModel):
         return value
 
 
+class ProfileUpdateRequest(BaseModel):
+    username: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=30,
+    )
+    display_name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
+    bio: str | None = Field(
+        default=None,
+        max_length=500,
+    )
+    avatar_url: str | None = Field(
+        default=None,
+        max_length=2048,
+    )
+
+    @field_validator("username")
+    @classmethod
+    def validate_optional_username(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        normalized_username = value.strip().lower()
+
+        if not USERNAME_PATTERN.fullmatch(normalized_username):
+            raise ValueError(
+                "Username may contain only lowercase letters, numbers, and underscores."
+            )
+
+        return normalized_username
+
+    @field_validator("display_name")
+    @classmethod
+    def normalize_optional_display_name(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        normalized_name = " ".join(value.split())
+
+        if not normalized_name:
+            raise ValueError("Display name cannot be empty.")
+
+        return normalized_name
+
+    @field_validator("bio")
+    @classmethod
+    def normalize_bio(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        normalized_bio = value.strip()
+
+        return normalized_bio or None
+
+    @field_validator("avatar_url")
+    @classmethod
+    def normalize_avatar_url(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        normalized_url = value.strip()
+
+        return normalized_url or None
+
+
 class ProfileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

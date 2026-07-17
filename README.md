@@ -89,6 +89,8 @@ environment-based settings, and a health-check endpoint.
 - [x] Add role-based authorization dependencies
 - [x] Add current-user endpoint
 - [x] Add logout from all devices
+- [x] Implement authenticated profile updates
+- [x] Add profile repository and service layers
 - [ ] Implement roles and permissions
 - [ ] Implement categories
 - [ ] Implement challenges
