@@ -19,6 +19,12 @@ from app.schemas.course import (
     CourseResponse,
     CourseUpdateRequest,
 )
+from app.schemas.lesson import (
+    LessonCreateRequest,
+    LessonListResponse,
+    LessonResponse,
+    LessonUpdateRequest,
+)
 from app.schemas.user import (
     ProfileResponse,
     ProfileUpdateRequest,
@@ -29,15 +35,15 @@ from app.schemas.user import (
 __all__ = [
     "LoginRequest",
     "LoginResponse",
+    "LogoutAllResponse",
     "LogoutRequest",
-    "ProfileResponse",
     "RefreshTokenRequest",
     "TokenPair",
     "TokenType",
+    "ProfileResponse",
+    "ProfileUpdateRequest",
     "UserRegistrationRequest",
     "UserResponse",
-    "LogoutAllResponse",
-    "ProfileUpdateRequest",
     "CategoryCreateRequest",
     "CategoryListResponse",
     "CategoryResponse",
@@ -46,4 +52,8 @@ __all__ = [
     "CourseListResponse",
     "CourseResponse",
     "CourseUpdateRequest",
+    "LessonCreateRequest",
+    "LessonListResponse",
+    "LessonResponse",
+    "LessonUpdateRequest",
 ]

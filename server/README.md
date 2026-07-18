@@ -83,6 +83,15 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Course difficulty and XP metadata
 - Course pagination and filtering
 - Soft course deletion and archiving
+- Lesson CRUD operations
+- Course-to-lesson relationships
+- Lesson publishing workflow
+- Lesson ordering within courses
+- Lesson preview support
+- Lesson pagination
+- Automatic lesson slugs
+- Soft lesson deletion
+- Administrator-only lesson management
 
 ---
 
@@ -408,8 +417,6 @@ Business rules and transaction coordination will be handled by the service layer
 ---
 
 
----
-
 ## Authentication Endpoints
 
 ### Register User
@@ -581,9 +588,6 @@ Subsequent attempts to use that token for rotation are rejected.
 
 ---
 
-
----
-
 ## Protected Endpoints
 
 Protected endpoints require an access token in the `Authorization` header.
@@ -704,6 +708,78 @@ GET /api/v1/courses?difficulty_level=2
 ```
 
 Deleting a course archives it through soft deletion.
+
+---
+
+## Lesson Management
+
+Lessons belong to courses and support **draft**, **published**, and **archived**
+states.
+
+### Public Endpoints
+
+```http
+GET /api/v1/courses/{course_id}/lessons
+GET /api/v1/lessons/{lesson_id}
+```
+
+### Administrator Endpoints
+
+```http
+POST /api/v1/courses/{course_id}/lessons
+PATCH /api/v1/lessons/{lesson_id}
+DELETE /api/v1/lessons/{lesson_id}
+```
+
+Only active published lessons are returned by public endpoints.
+
+Lessons are ordered by their `position` within each course.
+
+Lesson titles automatically generate unique slugs within the same course.
+
+Deleting a lesson archives it through soft deletion.
+
+### Lesson Ordering
+
+Each lesson has a unique position within its course.
+
+The following request creates the first lesson in a course:
+
+```http
+POST /api/v1/courses/{course_id}/lessons
+```
+
+Example request:
+
+```json
+{
+  "title": "Introduction to FastAPI",
+  "content": "FastAPI is a modern Python framework.",
+  "video_url": "https://example.com/video.mp4",
+  "estimated_minutes": 15,
+  "position": 1,
+  "is_preview": true,
+  "status": "draft"
+}
+```
+
+### Publishing a Lesson
+
+A lesson can be published by updating its status:
+
+```http
+PATCH /api/v1/lessons/{lesson_id}
+```
+
+Example request:
+
+```json
+{
+  "status": "published"
+}
+```
+
+Published lessons become available through the public lesson endpoints.
 
 ---
 
@@ -834,6 +910,16 @@ Current progress includes:
 -Profile endpoints
 -Category CRUD
 -Course CRUD
+-Lesson ORM model
+-Lesson repository implementation
+-Lesson service layer
+-Lesson CRUD API endpoints
+-Lesson schema validation
+-Course-to-lesson relationship
+-Automatic lesson slug generation
+-Lesson ordering
+-Soft lesson deletion
+-Lesson publishing workflow
 
 ---
 

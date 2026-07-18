@@ -23,6 +23,7 @@ from app.models.enums import CourseStatus
 
 if TYPE_CHECKING:
     from app.models.category import Category
+    from app.models.lesson import Lesson
 
 
 class Course(
@@ -122,6 +123,13 @@ class Course(
 
     category: Mapped["Category"] = relationship(
         back_populates="courses",
+    )
+
+    lessons: Mapped[list["Lesson"]] = relationship(
+        back_populates="course",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Lesson.position",
     )
 
     def __repr__(self) -> str:

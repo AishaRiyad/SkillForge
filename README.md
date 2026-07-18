@@ -94,6 +94,7 @@ environment-based settings, and a health-check endpoint.
 - [x] Implement categories
 - [x] Implement courses
 - [ ] Implement roles and permissions
+- [x] Implement lessons
 - [ ] Implement challenges
 - [ ] Implement submissions
 - [ ] Implement the XP and level system
