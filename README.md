@@ -91,8 +91,9 @@ environment-based settings, and a health-check endpoint.
 - [x] Add logout from all devices
 - [x] Implement authenticated profile updates
 - [x] Add profile repository and service layers
+- [x] Implement categories
+- [x] Implement courses
 - [ ] Implement roles and permissions
-- [ ] Implement categories
 - [ ] Implement challenges
 - [ ] Implement submissions
 - [ ] Implement the XP and level system
@@ -106,7 +107,7 @@ environment-based settings, and a health-check endpoint.
 - [ ] Add user progress reports
 - [ ] Add admin dashboard APIs
 - [ ] Add audit logs
-- [ ] Add automated tests
+- [ ] Add comprehensive automated tests
 - [ ] Add Docker Compose services
 - [ ] Add continuous integration with GitHub Actions
 - [ ] Build the frontend application

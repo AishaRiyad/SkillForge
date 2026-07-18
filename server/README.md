@@ -77,6 +77,12 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Automatic category slugs
 - Soft category deletion
 - Administrator-only category management
+- Course CRUD operations
+- Category-to-course relationships
+- Course publishing workflow
+- Course difficulty and XP metadata
+- Course pagination and filtering
+- Soft course deletion and archiving
 
 ---
 
@@ -586,38 +592,6 @@ Protected endpoints require an access token in the `Authorization` header.
 Authorization: Bearer ACCESS_TOKEN
 ```
 
-## Category Management
-
-SkillForge supports category management for organizing learning content.
-
-### Public Endpoints
-
-```http
-GET /api/v1/categories
-GET /api/v1/categories/{category_id}
-```
-
-### Administrator Endpoints
-
-```http
-POST /api/v1/categories
-PATCH /api/v1/categories/{category_id}
-DELETE /api/v1/categories/{category_id}
-```
-
-Categories use automatically generated slugs and soft deletion.
-
-Deleted categories remain stored in PostgreSQL but are excluded from public queries.
-
-### Pagination
-
-Category lists support pagination:
-
-```http
-GET /api/v1/categories?page=1&page_size=20
-```
-
-
 ### Current User
 
 ```http
@@ -662,6 +636,74 @@ POST /api/v1/auth/logout-all
 Revokes every active refresh-token session belonging to the authenticated user.
 
 Existing access tokens remain valid until their configured expiration.
+
+---
+
+## Category Management
+
+SkillForge supports category management for organizing learning content.
+
+### Public Endpoints
+
+```http
+GET /api/v1/categories
+GET /api/v1/categories/{category_id}
+```
+
+### Administrator Endpoints
+
+```http
+POST /api/v1/categories
+PATCH /api/v1/categories/{category_id}
+DELETE /api/v1/categories/{category_id}
+```
+
+Categories use automatically generated slugs and soft deletion.
+
+Deleted categories remain stored in PostgreSQL but are excluded from public queries.
+
+### Pagination
+
+Category lists support pagination:
+
+```http
+GET /api/v1/categories?page=1&page_size=20
+```
+
+
+## Course Management
+
+Courses belong to categories and support **draft**, **published**, and **archived**
+states.
+
+### Public Endpoints
+
+```http
+GET /api/v1/courses
+GET /api/v1/courses/{course_id}
+```
+
+### Administrator Endpoints
+
+```http
+POST /api/v1/courses
+PATCH /api/v1/courses/{course_id}
+DELETE /api/v1/courses/{course_id}
+```
+
+Only active published courses are returned by public endpoints.
+
+### Pagination and Filtering
+
+Course lists support pagination and filtering:
+
+```http
+GET /api/v1/courses?page=1&page_size=20
+GET /api/v1/courses?category_id=CATEGORY_UUID
+GET /api/v1/courses?difficulty_level=2
+```
+
+Deleting a course archives it through soft deletion.
 
 ---
 
@@ -785,6 +827,13 @@ Current progress includes:
 - Secure login API endpoint
 - JWT validation
 - Login API and service tests
+-Refresh-token persistence
+-Refresh-token rotation
+-Logout
+-Authenticated user dependency
+-Profile endpoints
+-Category CRUD
+-Course CRUD
 
 ---
 
@@ -792,9 +841,6 @@ Current progress includes:
 
 The project will continue with the implementation of:
 
-- User management APIs
-- Role-based authorization
-- Service layer
 - Skill assessment engine
 - Personalized learning recommendations
 - Redis caching

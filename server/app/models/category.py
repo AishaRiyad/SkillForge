@@ -1,11 +1,16 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import (
     Base,
     TimestampMixin,
     UUIDPrimaryKeyMixin,
 )
+
+if TYPE_CHECKING:
+    from app.models.course import Course
 
 
 class Category(
@@ -45,6 +50,11 @@ class Category(
         default=True,
         server_default="true",
         index=True,
+    )
+
+    courses: Mapped[list["Course"]] = relationship(
+        back_populates="category",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:

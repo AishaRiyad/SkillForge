@@ -10,6 +10,7 @@ from app.database.session import get_database_session
 from app.models.enums import UserRole, UserStatus
 from app.models.user import User
 from app.repositories.category_repository import CategoryRepository
+from app.repositories.course_repository import CourseRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.refresh_token_repository import (
     RefreshTokenRepository,
@@ -18,6 +19,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.auth import TokenType
 from app.services.auth_service import AuthService
 from app.services.category_service import CategoryService
+from app.services.course_service import CourseService
 from app.services.user_service import UserService
 
 DatabaseSession = Annotated[
@@ -167,4 +169,23 @@ def get_category_service(
 CategoryServiceDependency = Annotated[
     CategoryService,
     Depends(get_category_service),
+]
+
+
+def get_course_service(
+    session: DatabaseSession,
+) -> CourseService:
+    course_repository = CourseRepository(session)
+    category_repository = CategoryRepository(session)
+
+    return CourseService(
+        session=session,
+        course_repository=course_repository,
+        category_repository=category_repository,
+    )
+
+
+CourseServiceDependency = Annotated[
+    CourseService,
+    Depends(get_course_service),
 ]

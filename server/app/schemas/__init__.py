@@ -13,6 +13,12 @@ from app.schemas.category import (
     CategoryResponse,
     CategoryUpdateRequest,
 )
+from app.schemas.course import (
+    CourseCreateRequest,
+    CourseListResponse,
+    CourseResponse,
+    CourseUpdateRequest,
+)
 from app.schemas.user import (
     ProfileResponse,
     ProfileUpdateRequest,
@@ -36,4 +42,8 @@ __all__ = [
     "CategoryListResponse",
     "CategoryResponse",
     "CategoryUpdateRequest",
+    "CourseCreateRequest",
+    "CourseListResponse",
+    "CourseResponse",
+    "CourseUpdateRequest",
 ]
