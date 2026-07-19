@@ -10,9 +10,11 @@ from app.database.session import get_database_session
 from app.models.enums import UserRole, UserStatus
 from app.models.user import User
 from app.repositories.category_repository import CategoryRepository
+from app.repositories.challenge_repository import ChallengeRepository
 from app.repositories.course_repository import CourseRepository
 from app.repositories.lesson_repository import LessonRepository
 from app.repositories.profile_repository import ProfileRepository
+from app.repositories.question_repository import QuestionRepository
 from app.repositories.refresh_token_repository import (
     RefreshTokenRepository,
 )
@@ -20,8 +22,10 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.auth import TokenType
 from app.services.auth_service import AuthService
 from app.services.category_service import CategoryService
+from app.services.challenge_service import ChallengeService
 from app.services.course_service import CourseService
 from app.services.lesson_service import LessonService
+from app.services.question_service import QuestionService
 from app.services.user_service import UserService
 
 DatabaseSession = Annotated[
@@ -206,4 +210,36 @@ def get_lesson_service(
 LessonServiceDependency = Annotated[
     LessonService,
     Depends(get_lesson_service),
+]
+
+
+def get_challenge_service(
+    session: DatabaseSession,
+) -> ChallengeService:
+    return ChallengeService(
+        session=session,
+        challenge_repository=ChallengeRepository(session),
+        lesson_repository=LessonRepository(session),
+    )
+
+
+ChallengeServiceDependency = Annotated[
+    ChallengeService,
+    Depends(get_challenge_service),
+]
+
+
+def get_question_service(
+    session: DatabaseSession,
+) -> QuestionService:
+    return QuestionService(
+        session=session,
+        question_repository=QuestionRepository(session),
+        challenge_repository=ChallengeRepository(session),
+    )
+
+
+QuestionServiceDependency = Annotated[
+    QuestionService,
+    Depends(get_question_service),
 ]

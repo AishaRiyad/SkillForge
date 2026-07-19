@@ -92,6 +92,23 @@ The SkillForge server is an asynchronous REST API built with FastAPI. It powers 
 - Automatic lesson slugs
 - Soft lesson deletion
 - Administrator-only lesson management
+- Challenge CRUD operations
+- Lesson-to-challenge relationships
+- Challenge publishing workflow
+- Challenge passing-score and XP metadata
+- Challenge attempt-limit configuration
+- Question CRUD operations
+- Challenge-to-question relationships
+- Multiple-choice questions
+- True-or-false questions
+- Question ordering within challenges
+- Question points configuration
+- Question option validation
+- Public question responses without correct answers
+- Administrator-only answer visibility
+- Soft challenge deletion
+- Soft question deletion
+- Administrator-only challenge and question management
 
 ---
 
@@ -783,6 +800,187 @@ Published lessons become available through the public lesson endpoints.
 
 ---
 
+## Challenge Management
+
+Challenges belong to lessons and support **draft**, **published**, and
+**archived** states.
+
+Each lesson may contain one or more challenges.
+
+Challenges include assessment metadata such as:
+
+- Passing score
+- XP reward
+- Maximum number of attempts
+- Publication status
+
+### Public Endpoints
+
+```http
+GET /api/v1/lessons/{lesson_id}/challenges
+GET /api/v1/challenges/{challenge_id}
+```
+
+Only active published challenges are returned by public endpoints.
+
+### Administrator Endpoints
+
+```http
+POST /api/v1/lessons/{lesson_id}/challenges
+PATCH /api/v1/challenges/{challenge_id}
+DELETE /api/v1/challenges/{challenge_id}
+```
+
+Creating, updating, and deleting challenges requires administrator
+authorization.
+
+Deleting a challenge archives it through soft deletion instead of permanently
+removing it from PostgreSQL.
+
+### Creating a Challenge
+
+```http
+POST /api/v1/lessons/{lesson_id}/challenges
+```
+
+Example request:
+
+```json
+{
+  "title": "FastAPI Basics Quiz",
+  "description": "Test your understanding of FastAPI basics.",
+  "passing_score": 70,
+  "xp_reward": 150,
+  "max_attempts": 3,
+  "status": "draft"
+}
+```
+
+### Publishing a Challenge
+
+A challenge can be published by updating its status:
+
+```http
+PATCH /api/v1/challenges/{challenge_id}
+```
+
+Example request:
+
+```json
+{
+  "status": "published"
+}
+```
+
+Published challenges become available through the public challenge endpoints.
+
+---
+
+## Question Management
+
+Questions belong to challenges.
+
+The system currently supports:
+
+- Multiple-choice questions
+- True/false questions
+
+Questions are ordered by their `position` within each challenge.
+
+### Public Endpoint
+
+```http
+GET /api/v1/challenges/{challenge_id}/questions
+```
+
+The public endpoint returns only active questions from a published challenge.
+
+Public question responses do not expose:
+
+- `correct_answer`
+- `explanation`
+
+This prevents users from accessing the correct answers before submitting a
+challenge attempt.
+
+### Administrator Endpoints
+
+```http
+GET /api/v1/admin/challenges/{challenge_id}/questions
+POST /api/v1/challenges/{challenge_id}/questions
+PATCH /api/v1/questions/{question_id}
+DELETE /api/v1/questions/{question_id}
+```
+
+Administrator responses include the correct answer and explanation.
+
+### Creating a Multiple-Choice Question
+
+```http
+POST /api/v1/challenges/{challenge_id}/questions
+```
+
+Example request:
+
+```json
+{
+  "text": "Which language is FastAPI built for?",
+  "question_type": "multiple_choice",
+  "options": [
+    {
+      "key": "a",
+      "text": "Python"
+    },
+    {
+      "key": "b",
+      "text": "Java"
+    },
+    {
+      "key": "c",
+      "text": "PHP"
+    }
+  ],
+  "correct_answer": "a",
+  "explanation": "FastAPI is a Python web framework.",
+  "position": 1,
+  "points": 1
+}
+```
+
+Multiple-choice questions require at least two options.
+
+Each option key must be unique, and the correct answer must match one of the
+available option keys.
+
+### Creating a True/False Question
+
+```http
+POST /api/v1/challenges/{challenge_id}/questions
+```
+
+Example request:
+
+```json
+{
+  "text": "FastAPI supports asynchronous endpoints.",
+  "question_type": "true_false",
+  "options": null,
+  "correct_answer": "true",
+  "explanation": "FastAPI supports async def endpoints.",
+  "position": 2,
+  "points": 1
+}
+```
+
+True/false questions accept only `true` or `false` as the correct answer and
+must not contain options.
+
+Each question position must be unique within the same challenge.
+
+Deleting a question performs a soft delete by marking it as inactive.
+
+---
+
 ## Current Structure
 
 ```text
@@ -920,6 +1118,17 @@ Current progress includes:
 -Lesson ordering
 -Soft lesson deletion
 -Lesson publishing workflow
+-Challenge and question database models
+-Challenge and question repository layers
+-Challenge and question service layers
+-Challenge CRUD API endpoints
+-Question CRUD API endpoints
+-Multiple-choice and true/false question validation
+-Public and administrator question responses
+-Hidden correct answers in public APIs
+-Challenge publishing workflow
+-Soft deletion for challenges and questions
+-Automated schema and service tests for challenges and questions
 
 ---
 

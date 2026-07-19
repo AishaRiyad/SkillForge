@@ -45,8 +45,10 @@ def import_all_models() -> None:
     """Import ORM models so Alembic can discover their metadata."""
 
     from app.models.category import Category  # noqa: F401
+    from app.models.challenge import Challenge  # noqa: F401
     from app.models.course import Course  # noqa: F401
     from app.models.lesson import Lesson  # noqa: F401
     from app.models.profile import Profile  # noqa: F401
+    from app.models.question import Question  # noqa: F401
     from app.models.refresh_token import RefreshToken  # noqa: F401
     from app.models.user import User  # noqa: F401

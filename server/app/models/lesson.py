@@ -13,10 +13,15 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.base import (
+    Base,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+)
 from app.models.enums import LessonStatus
 
 if TYPE_CHECKING:
+    from app.models.challenge import Challenge
     from app.models.course import Course
 
 
@@ -112,6 +117,12 @@ class Lesson(
 
     course: Mapped["Course"] = relationship(
         back_populates="lessons",
+    )
+
+    challenges: Mapped[list["Challenge"]] = relationship(
+        back_populates="lesson",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:
